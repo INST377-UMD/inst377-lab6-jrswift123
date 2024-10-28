@@ -1,0 +1,61 @@
+<html>
+<head>
+    <title>Lab 6</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <style>
+        #map { height: 600px; }
+        .marker-info { margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Map of US</h1>
+    <div id="map"></div>
+    <div id="markers-info"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        function getRandomInRange(from, to, fixed) {
+            return (Math.random() * (to - from) + from).toFixed(fixed) * 1;
+        }
+
+        const coordinates = [
+            { lat: getRandomInRange(30, 35, 3), lng: getRandomInRange(-100, -90, 3) },
+            { lat: getRandomInRange(30, 35, 3), lng: getRandomInRange(-100, -90, 3) },
+            { lat: getRandomInRange(30, 35, 3), lng: getRandomInRange(-100, -90, 3) } 
+        ];
+
+        const map = L.map('map').setView([32.5, -95], 5);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        async function getLocality(lat, lng) {
+            const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+            const data = await response.json();
+            return data.locality || 'Unknown locality';
+        }
+
+        async function addMarkers() {
+            for (let index = 0; index < coordinates.length; index++) {
+                const coord = coordinates[index];
+                const locality = await getLocality(coord.lat, coord.lng);
+                const marker = L.marker([coord.lat, coord.lng]).addTo(map);
+                marker.bindPopup(`Marker ${index + 1}`);
+                marker.openPopup();
+
+                const infoDiv = document.createElement('div');
+                infoDiv.classList.add('marker-info');
+                infoDiv.innerHTML = `
+                    <strong>Marker ${index + 1}: Latitude: ${coord.lat.toFixed(3)}, Longitude: ${coord.lng.toFixed(3)}<br>
+                    Locality: ${locality}</strong>
+                `;
+                document.getElementById('markers-info').appendChild(infoDiv);
+            }
+        }
+
+        addMarkers();
+    </script>
+</body>
+</html>
